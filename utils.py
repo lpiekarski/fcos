@@ -3,21 +3,13 @@ import subprocess
 
 import torch
 from PIL.Image import Image
-from torch import nn
 import torchvision
-import modules
-import box_coders
 import yaml
 
 
 def load_yaml_config(path: str) -> dict:
     with open(path, 'r') as f:
         return yaml.load(f, yaml.CLoader)
-
-
-def initialize_from_config(cfg):
-    locals()
-    return exec(f"{cfg[0]}({', '.join(cfg[1])})")
 
 
 def get_image_and_label_paths(file):

@@ -3,7 +3,7 @@ warmup_lr: [0.01, 0.01, 0.01, 0.01, 0.005, 0.005, 0.005, 0.005, 0.0025, 0.0025]
 momentum: 0.9
 epochs: 16
 strides: [32, 64, 128]
-conv_in_heads: 4
+convs_in_heads: 4
 out_channels: 64
 detections_per_img: 100
 backbone: [modules.BackboneWithFPN, [strides, out_channels]]

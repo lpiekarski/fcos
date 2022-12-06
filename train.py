@@ -12,8 +12,11 @@ from torchvision.models.detection.anchor_utils import AnchorGenerator
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from tqdm import tqdm
 import random
+
+from losses import FCOSLoss
 from modules import FCOS
 from utils import load_yaml_config, initialize_from_config, get_image_and_label_paths, get_inputs_and_targets
+import numpy as np
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -41,7 +44,7 @@ if __name__ == "__main__":
     box_coder = hyp["box_coder"]
     box_coder = exec(f"{box_coder[0]}({', '.join([str(v) for v in box_coder[1]])})")
     num_classes = data["num_classes"]
-    conv_in_heads = hyp["conv_in_heads"]
+    convs_in_heads = hyp["convs_in_heads"]
     detections_per_img = hyp["detections_per_img"]
     warmup_lr = hyp["warmup_lr"]
     base_lr = hyp["lr"]
@@ -50,7 +53,7 @@ if __name__ == "__main__":
     inputs, targets = get_inputs_and_targets(data, device)
     image_mean = [img.flatten() for img in inputs]
     image_mean = torch.stack([img for img in image_mean])
-    image_mean, image_std = image_mean.mean(), image_mean.std()
+    image_mean, image_std = image_mean.mean(), torch.std(image_mean)
     transform = hyp["transform"]
     transform = exec(f"{transform[0]}({', '.join([str(v) for v in transform[1]])})")
     fcos = FCOS(
@@ -70,6 +73,7 @@ if __name__ == "__main__":
     print(f"Number of trainable parameters: {num_parameters}")
 
     optimizer = optim.SGD(fcos.parameters(), base_lr, momentum=momentum)
+    loss_function = FCOSLoss()
 
     epoch_cls = []
     epoch_bbox = []
@@ -93,7 +97,8 @@ if __name__ == "__main__":
             random.shuffle(idxs)
             for idx in idxs:
                 optimizer.zero_grad()
-                losses = fcos(inputs[idx], targets[idx])
+                outputs = fcos(inputs[idx], targets[idx])
+                losses = loss_function(*outputs)
                 classification = losses["classification"]
                 bbox_regression = losses["bbox_regression"]
                 bbox_ctrness = losses["bbox_ctrness"]
@@ -108,7 +113,7 @@ if __name__ == "__main__":
                 pbar.update(1)
             fcos.eval()
             with torch.no_grad():
-                pbar.set_description(f"Epoch {epoch + 1:02d}/{EPOCHS:02d} classification: {np.mean(cls_losses):.5f}, bbox regression: {np.mean(bbox_losses):.5f}, centerness: {np.mean(ctrness_losses):.5f}, total: {np.mean(sum_losses):.5f}")
+                pbar.set_description(f"Epoch {epoch + 1:02d}/{epochs:02d} classification: {np.mean(cls_losses):.5f}, bbox regression: {np.mean(bbox_losses):.5f}, centerness: {np.mean(ctrness_losses):.5f}, total: {np.mean(sum_losses):.5f}")
                 epoch_bbox.append(np.mean(bbox_losses))
                 epoch_ctrness.append(np.mean(ctrness_losses))
                 epoch_cls.append(np.mean(cls_losses))
