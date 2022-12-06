@@ -1,0 +1,13 @@
+lr: 0.0004
+warmup_lr: [0.01, 0.01, 0.01, 0.01, 0.005, 0.005, 0.005, 0.005, 0.0025, 0.0025]
+momentum: 0.9
+epochs: 16
+strides: [32, 64, 128]
+conv_in_heads: 4
+out_channels: 64
+detections_per_img: 100
+backbone: [modules.BackboneWithFPN, [strides, out_channels]]
+box_coder: [box_coders.BoxLinearCoder, [True]]
+image_mean: [0.0233]
+image_std: [0.14]
+transform: [GeneralizedRCNNTransform, [128, 128, image_mean, image_std]]
