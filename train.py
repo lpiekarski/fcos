@@ -3,8 +3,8 @@ import argparse
 import torchvision
 from PIL import Image
 import subprocess
-import modules
-import box_coders
+import fcos.modules
+import fcos.box_coders
 from torch import nn
 import torch.optim as optim
 import torch
@@ -13,9 +13,9 @@ from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from tqdm import tqdm
 import random
 
-from losses import FCOSLoss
-from modules import FCOS
-from utils import load_yaml_config, initialize_from_config, get_image_and_label_paths, get_inputs_and_targets
+from fcos.losses import FCOSLoss
+from fcos.modules import FCOS
+from fcos.utils import load_yaml_config, get_inputs_and_targets, get_mean_and_std
 import numpy as np
 
 if __name__ == "__main__":
@@ -51,7 +51,8 @@ if __name__ == "__main__":
     momentum = hyp["momentum"]
     epochs = hyp["epochs"]
     inputs, targets = get_inputs_and_targets(data, device)
-    image_mean = [img.flatten() for img in inputs]
+    image_mean, image_std = get_mean_and_std(inputs)
+    image_mean = [img.reshape(-1, img.shape[-1]) for img in inputs]
     image_mean = torch.stack([img for img in image_mean])
     image_mean, image_std = image_mean.mean(), torch.std(image_mean)
     transform = hyp["transform"]

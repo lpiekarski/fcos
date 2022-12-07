@@ -44,3 +44,9 @@ def get_inputs_and_targets(data, device):
                 "boxes": torch.tensor([[cx - pw / 2., cy - ph / 2., cx + pw / 2., cy + ph / 2.] for cx, cy, pw, ph in zip(ctr_x, ctr_y, w, h)], dtype=torch.float32, device=device)
             })
     return inputs, targets
+
+
+def get_mean_and_std(inputs):
+    all_pixels = [img.reshape(-1, img.shape[-1]) for img in inputs]
+    all_pixels = torch.stack([img for img in all_pixels])
+    return all_pixels.mean(dim=0), torch.std(all_pixels, dim=0)
